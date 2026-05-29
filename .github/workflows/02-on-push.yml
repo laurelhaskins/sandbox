@@ -1,0 +1,46 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# 02 · On Push & Pull Request — automatic triggers + checkout
+# ─────────────────────────────────────────────────────────────────────────────
+# Bitbucket comparison:
+#   - `on: push:` ≈ the default `pipelines: branches:` section.
+#   - `on: pull_request:` ≈ `pipelines: pull-requests:`.
+#   - actions/checkout ≈ Bitbucket cloning your repo automatically. In Actions
+#     the checkout is NOT automatic — you must add the checkout step yourself.
+
+name: 02 · On Push & PR
+
+on:
+  push:
+    branches:
+      - main
+      - 'actions_sandbox'   # this practice branch
+    # `paths:` filters so the workflow only runs when matching files change.
+    # Remove this to run on every push. (Bitbucket: similar to condition/changesets.)
+    # paths:
+    #   - '**.md'
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Checkout & inspect
+    runs-on: ubuntu-latest
+    steps:
+      # THE most common step in all of Actions. Without it, the runner has an
+      # empty working directory — your repo files are NOT there by default.
+      - name: Check out the code
+        uses: actions/checkout@v4   # `uses:` runs a reusable action (like a plugin).
+
+      - name: List the repository contents
+        run: ls -la
+
+      - name: Inspect the event that triggered this run
+        # `github` is a "context" object full of metadata about the run.
+        # ${{ ... }} is Actions' expression syntax. Bitbucket used $BITBUCKET_*
+        # env vars; Actions has both env vars AND these context expressions.
+        run: |
+          echo "Triggered by event: ${{ github.event_name }}"
+          echo "On branch/ref:      ${{ github.ref }}"
+          echo "Commit SHA:         ${{ github.sha }}"
+          echo "Actor (who):        ${{ github.actor }}"

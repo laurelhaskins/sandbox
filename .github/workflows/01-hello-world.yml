@@ -1,0 +1,42 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# 01 · Hello World — the absolute basics
+# ─────────────────────────────────────────────────────────────────────────────
+# Bitbucket comparison:
+#   - This whole file ≈ one `bitbucket-pipelines.yml`, except in Actions you can
+#     have MANY workflow files, each in .github/workflows/, each triggered
+#     independently.
+#   - `name:` below ≈ the pipeline name shown in the UI.
+#
+# This workflow is triggered MANUALLY so you can practice the "Run workflow"
+# button in the Actions tab (see the guide: .github/workflows/README.md).
+
+name: 01 · Hello World
+
+# ── Triggers ──────────────────────────────────────────────────────────────
+# `on:` decides WHEN a workflow runs. In Bitbucket this was implicit (branches:,
+# pull-requests:, custom:). Here it's explicit and very flexible.
+on:
+  # `workflow_dispatch` = a manual "Run workflow" button in the UI.
+  # Closest Bitbucket analogue: a `custom:` pipeline you trigger by hand.
+  workflow_dispatch:
+
+# ── Jobs ──────────────────────────────────────────────────────────────────
+# A workflow has one or more JOBS. Each job runs on its own fresh VM ("runner").
+# In Bitbucket, each `step:` got a fresh Docker container — same idea, but here
+# the unit is a "job" and each job can contain many steps.
+jobs:
+  greet:                          # <- job ID (you pick this; used by `needs:`)
+    name: Say hello               # <- friendly name shown in the UI
+    runs-on: ubuntu-latest        # <- which runner. ≈ Bitbucket's `image:`,
+                                  #    except it's a full VM, not just an image.
+    steps:
+      # Each `- name:`/`run:` pair is a STEP. ≈ a `- script:` line in Bitbucket.
+      - name: Print a greeting
+        run: echo "Hello from GitHub Actions! 👋"
+
+      - name: Show where we are
+        # `run:` with a pipe (|) lets you write multiple shell lines.
+        run: |
+          echo "Runner OS: $RUNNER_OS"
+          echo "Working dir: $(pwd)"
+          echo "Date: $(date)"
