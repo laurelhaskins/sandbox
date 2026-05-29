@@ -1,0 +1,61 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# 04 · Multiple Jobs, Matrix, Dependencies & Artifacts — the "real CI" shape
+# ─────────────────────────────────────────────────────────────────────────────
+# Bitbucket comparison:
+#   - `needs:` ≈ Bitbucket steps running in sequence, but here you build an
+#     explicit dependency graph: jobs with no `needs` run IN PARALLEL.
+#   - `strategy: matrix:` ≈ Bitbucket parallel steps, but generated automatically
+#     from a list — one job per combination.
+#   - upload/download-artifact ≈ Bitbucket `artifacts:` passed between steps.
+
+name: 04 · Jobs, Matrix & Artifacts
+
+on:
+  workflow_dispatch:
+
+jobs:
+  # ── Job 1: runs first (nothing depends on it yet) ──────────────────────────
+  lint:
+    name: Pretend lint
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Linting... (pretend) ✅"
+
+  # ── Job 2: a MATRIX — this single definition expands into 3 parallel jobs ──
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false        # don't cancel siblings if one fails
+      matrix:
+        version: [16, 18, 20] # → three jobs: version=16, =18, =20
+    steps:
+      - name: Run "tests" for version ${{ matrix.version }}
+        run: |
+          echo "Testing against version ${{ matrix.version }}"
+          echo "result for v${{ matrix.version }}: PASS" > result-${{ matrix.version }}.txt
+
+      # Artifacts let you save files from a run and download them in the UI,
+      # or pass them to a later job.
+      - name: Upload the result file
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-result-${{ matrix.version }}
+          path: result-${{ matrix.version }}.txt
+
+  # ── Job 3: waits for BOTH lint and test to finish ─────────────────────────
+  deploy:
+    name: Pretend deploy
+    runs-on: ubuntu-latest
+    needs: [lint, test]       # <- dependency graph: this runs last
+    steps:
+      - name: Download all artifacts from the test job
+        uses: actions/download-artifact@v4
+        with:
+          path: downloaded
+
+      - name: Show what we collected
+        run: |
+          echo "Collected artifacts:"
+          find downloaded -type f
+          echo "Now we'd deploy. 🚀 (pretend)"
